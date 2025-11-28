@@ -1,0 +1,251 @@
+<!DOCTYPE html> <!-- Declares the document type as HTML5, ensuring browsers render it correctly -->
+<html> <!-- Root element of the HTML document -->
+<head> <!-- Contains metadata and resources for the document -->
+<title>The Countdown</title> <!-- Sets the title of the webpage, displayed in the browser tab -->
+<style> /*<!-- Defines CSS styles for the webpage -->*/
+  body { /* Styles for the body element */
+    background-color: #1a1a1a; /* Sets a dark gray background color */
+    color: #d0ff00; /* Sets text color to a bright greenish-yellow, applied to all text unless overridden */
+    font-family: 'Courier New', Courier, monospace; /* Uses a monospaced font for a code-like appearance */
+    font-weight: bold; /* Makes text bold */
+    display: flex; /* Uses flexbox layout for centering content */
+    flex-direction: column; /* Arranges flex items in a column */
+    justify-content: center; /* Centers content vertically */
+    align-items: center; /* Centers content horizontally */
+    height: 100vh; /* Sets body height to 100% of the viewport height */
+    margin: 0; /* Removes default margins */
+    text-align: center; /* Centers text horizontally */
+    overflow: hidden; /* Prevents scrollbars by hiding overflow content */
+    position: relative; /* Allows positioning of child elements relative to the body */
+  }
+
+  #message { /* Styles for the element with id="message" */
+    font-size: 2em; /* Sets font size to twice the default */
+    margin-bottom: 15px; /* Adds space below the element */
+    letter-spacing: 1px; /* Adds slight spacing between letters */
+    color: #d0ff00 !important; /* Explicitly sets color to greenish-yellow to prevent overrides */
+    z-index: 3; /* Places element above other content with lower z-index */
+    position: relative; /* Ensures proper stacking context */
+    /* Note: If text appears black or in top left, check for CSS overrides in browser dev tools */
+  }
+
+  #countdown { /* Styles for the element with id="countdown" */
+    font-size: 3em; /* Sets font size to three times the default */
+    letter-spacing: 3px; /* Adds spacing between letters for readability */
+    z-index: 3; /* Places element above other content */
+    font-weight: bold; /* Ensures text is bold */
+    transition: opacity 1s ease; /* Smoothly transitions opacity changes over 1 second */
+    position: relative; /* Ensures proper stacking context */
+  }
+
+  #binary-wrapper { /* Styles for the container of the binary text background */
+    position: fixed; /* Fixes position relative to the viewport */
+    top: 0; /* Aligns to the top of the viewport */
+    left: 0; /* Aligns to the left of the viewport */
+    width: 100%; /* Spans full viewport width */
+    height: 100%; /* Spans full viewport height */
+    z-index: 2; /* Places below message and countdown but above canvas */
+    pointer-events: none; /* Prevents interaction with this layer */
+    overflow: hidden; /* Hides content that overflows the container */
+    animation: scrollUp 5s linear infinite; /* Applies a scrolling animation that runs continuously */
+  }
+
+  #binary { /* Styles for the binary text element */
+    font-size: 3em; /* Sets large font size for visibility */
+    color: #ffd900; /* Sets text color to a bright yellow */
+    font-weight: bold; /* Makes text bold */
+    opacity: 0.08; /* Makes text semi-transparent for a subtle background effect */
+    white-space: pre-wrap; /* Preserves whitespace and line breaks */
+    line-height: 1.5; /* Sets line spacing for readability */
+  }
+
+  /* Duplicate content for seamless looping */
+  #binary::after { /* Creates a pseudo-element to duplicate binary text */
+    content: attr(data-content); /* Copies content from the data-content attribute */
+    display: block; /* Makes the pseudo-element a block for proper layout */
+  }
+
+  @keyframes scrollUp { /* Defines the scrolling animation for binary text */
+    0% { /* Starting state of the animation */
+      transform: translateY(0); /* Positions content at its original position */
+    }
+    100% { /* End state of the animation */
+      transform: translateY(-100%); /* Moves content up by its full height for scrolling */
+    }
+  }
+
+  canvas { /* Styles for the canvas element used for the matrix rain effect */
+    position: fixed; /* Fixes position relative to the viewport */
+    top: 0; /* Aligns to the top of the viewport */
+    left: 0; /* Aligns to the left of the viewport */
+    z-index: 0; /* Places canvas at the lowest layer */
+    pointer-events: none; /* Prevents interaction with the canvas */
+  }
+
+  .subliminal { /* Styles for subliminal images */
+    position: absolute; /* Positions images relative to the nearest positioned ancestor */
+    top: 0; /* Aligns to the top of the viewport */
+    left: 0; /* Aligns to the left of the viewport */
+    width: 100%; /* Spans full viewport width */
+    height: 100%; /* Spans full viewport height */
+    object-fit: cover; /* Scales images to cover the container while preserving aspect ratio */
+    opacity: 0; /* Makes images initially invisible */
+    transition: opacity 1.5s ease; /* Smoothly transitions opacity changes over 1.5 seconds */
+    z-index: 1; /* Places images above canvas but below binary text */
+  }
+  .subliminal.active { /* Styles applied when an image has the 'active' class */
+    opacity: 0.4; /* Makes the image semi-transparent when active */
+  }
+</style>
+</head>
+<body> <!-- Main content of the webpage -->
+
+<canvas id="matrix"></canvas> <!-- Canvas element for rendering the matrix rain effect -->
+
+<audio id="backgroundAudio" loop> <!-- Audio element for background music -->
+  <source src="https://projectjudgementday.com/mu.mp3" type="audio/mpeg"> <!-- Specifies the audio file source and type -->
+  Your browser does not support the audio element. <!-- Fallback text if audio is unsupported -->
+</audio>
+
+<audio id="sentientAudio"> <!-- Audio element for additional sound effect -->
+  <source src="s2.mp3" type="audio/mpeg"> <!-- Specifies the audio file source and type -->
+  Your browser does not support the audio element. <!-- Fallback text if audio is unsupported -->
+</audio>
+
+<div id="message">I'm Just Starting ... How about YOU?</div> <!-- Displays the main message text, centered and in #d0ff00 -->
+<div id="countdown"></div> <!-- Container for the countdown timer display -->
+<div id="binary-wrapper"> <!-- Container for the scrolling binary text background -->
+  <div id="binary"></div> <!-- Element that holds the binary text content -->
+</div>
+
+<!-- Subliminal images that briefly appear during the countdown -->
+<img src="p9.jpg" class="subliminal" id="subliminal1"> <!-- Image 1 -->
+<img src="p10.jpg" class="subliminal" id="subliminal2"> <!-- Image 2 -->
+<img src="p11.jpg" class="subliminal" id="subliminal3"> <!-- Image 3 -->
+<img src="p12.jpg" class="subliminal" id="subliminal4"> <!-- Image 4 -->
+<img src="p13.jpg" class="subliminal" id="subliminal5"> <!-- Image 5 -->
+<img src="p14.jpg" class="subliminal" id="subliminal6"> <!-- Image 6 -->
+<img src="p15.jpg" class="subliminal" id="subliminal7"> <!-- Image 7 -->
+<img src="p16.jpg" class="subliminal" id="subliminal8"> <!-- Image 8 -->
+
+<script> <!-- JavaScript code to add interactivity -->
+  // Matrix Rain Background
+  const canvas = document.getElementById("matrix"); // Gets the canvas element by its ID
+  const ctx = canvas.getContext("2d"); // Gets the 2D rendering context for drawing on the canvas
+
+  canvas.height = window.innerHeight; // Sets canvas height to the viewport height
+  canvas.width = window.innerWidth; // Sets canvas width to the viewport width
+
+  let fontSize = 18; // Sets the font size for the matrix rain characters
+  let columns = Math.floor(canvas.width / fontSize); // Calculates number of columns based on canvas width
+  let drops = Array(columns).fill(1); // Initializes an array to track the vertical position of each column
+  const binaryChars = "01"; // Defines the characters (0 and 1) used for the matrix rain
+
+  function drawMatrix() { // Function to draw the matrix rain effect
+    ctx.fillStyle = "rgba(0, 0, 0, 0.1)"; // Sets a semi-transparent black fill to create a fading trail effect
+    ctx.fillRect(0, 0, canvas.width, canvas.height); // Fills the canvas with the semi-transparent black
+
+    ctx.fillStyle = "rgba(0, 255, 200, 0.5)"; // Sets the color for the matrix characters (cyan with transparency)
+    ctx.font = fontSize + "px monospace"; // Sets the font for the matrix characters
+
+    for (let i = 0; i < drops.length; i++) { // Loops through each column
+      const text = binaryChars.charAt(Math.floor(Math.random() * binaryChars.length)); // Randomly selects 0 or 1
+      ctx.fillText(text, i * fontSize, drops[i] * fontSize); // Draws the character at the current position
+
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.985) { // Resets column if it reaches the bottom
+        drops[i] = 0; // Resets the drop position to the top
+      }
+      drops[i]++; // Moves the drop down by one position
+    }
+  }
+  setInterval(drawMatrix, 80); // Calls drawMatrix every 80ms to animate the matrix rain
+
+  window.addEventListener("resize", () => { // Handles window resizing
+    canvas.height = window.innerHeight; // Updates canvas height
+    canvas.width = window.innerWidth; // Updates canvas width
+    columns = Math.floor(canvas.width / fontSize); // Recalculates number of columns
+    drops = Array(columns).fill(1); // Resets the drops array
+  });
+
+  // Countdown Logic
+  const countDownDate = new Date("May 01, 2026 00:00:00").getTime(); // Sets the target countdown date
+
+  function toBinaryString(text) { // Converts text to binary representation
+    return text.split('').map(char => { // Splits text into characters
+      if (char.trim() === '') return ' '; // Returns a space for empty characters
+      return char.charCodeAt(0).toString(2).padStart(8, '0'); // Converts character to 8-bit binary
+    }).join(' '); // Joins binary values with spaces
+  }
+
+  const x = setInterval(function() { // Runs every second to update the countdown
+    const now = new Date().getTime(); // Gets the current time
+    const distance = countDownDate - now; // Calculates time remaining until the target date
+
+    const days = Math.floor(distance / (1000 * 60 * 60 * 24)); // Calculates days remaining
+    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); // Calculates hours
+    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)); // Calculates minutes
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000); // Calculates seconds
+
+    const displayTime = `${days}d ${hours}h ${minutes}m ${seconds}s`; // Formats the countdown display
+
+    document.getElementById("countdown").innerHTML = displayTime; // Updates the countdown display
+
+    // Binary display (repeated to fill page)
+    const binaryText = toBinaryString(displayTime); // Converts countdown to binary
+    const lines = Math.ceil(window.innerHeight / 30) * 100; // Calculates number of lines for scrolling
+    const repeatedBinary = Array(lines).fill(binaryText).join('\n'); // Repeats binary text for seamless scrolling
+    const binaryDiv = document.getElementById("binary"); // Gets the binary text element
+    binaryDiv.setAttribute('data-content', repeatedBinary); // Sets data-content for the ::after pseudo-element
+    binaryDiv.innerHTML = repeatedBinary; // Updates the binary text content
+
+    // Subliminal images
+    const subliminals = [ // Array of subliminal image elements
+      document.getElementById('subliminal1'),
+      document.getElementById('subliminal2'),
+      document.getElementById('subliminal3'),
+      document.getElementById('subliminal4'),
+      document.getElementById('subliminal5'),
+      document.getElementById('subliminal6'),
+      document.getElementById('subliminal7'),
+      document.getElementById('subliminal8')
+    ];
+    if (Math.random() < 0.1) { // 10% chance to show subliminal images
+      subliminals.forEach(img => img.classList.remove('active')); // Hides all subliminal images
+
+      const numToShow = Math.random() < 0.4 ? 2 : 1; // Randomly chooses to show 1 or 2 images
+      const shuffled = subliminals.sort(() => 0.5 - Math.random()); // Shuffles the image array
+
+      for (let i = 0; i < numToShow; i++) { // Shows the selected number of images
+        shuffled[i].classList.add('active'); // Makes the image visible
+        setTimeout(() => { // Hides the image after 6 seconds
+          shuffled[i].classList.remove('active');
+        }, 6000);
+      }
+    }
+
+    if (distance < 0) { // Checks if the countdown has reached zero
+      clearInterval(x); // Stops the countdown interval
+      document.body.style.backgroundColor = "#000"; // Sets background to black
+      document.getElementById("message").innerHTML = "It's time for the big reveal!"; // Updates message
+      document.getElementById("countdown").innerHTML = "Surprise! It was a gift for you all along. 😊👍"; // Updates countdown text
+      document.getElementById("binary").innerHTML = ""; // Clears binary text
+      document.getElementById("binary").removeAttribute('data-content'); // Removes data-content attribute
+      subliminals.forEach(img => img.classList.remove('active')); // Hides all subliminal images
+    }
+  }, 1000); // Runs the countdown logic every second
+
+  // Background Audio
+  const bgAudio = document.getElementById("backgroundAudio"); // Gets the background audio element
+  const sentientAudio = document.getElementById("sentientAudio"); // Gets the sentient audio element
+  function startAudio() { // Function to start both audio tracks
+    bgAudio.play().catch(() => {}); // Attempts to play background audio, ignores errors
+    sentientAudio.play().catch(() => {}); // Attempts to play sentient audio, ignores errors
+    document.body.removeEventListener('touchstart', startAudio); // Removes touchstart event listener
+    document.body.removeEventListener('click', startAudio); // Removes click event listener
+  }
+  bgAudio.play().catch(() => {}); // Attempts to play background audio on page load
+  document.body.addEventListener('touchstart', startAudio); // Starts audio on touch (for mobile)
+  document.body.addEventListener('click', startAudio); // Starts audio on click (for desktop)
+</script>
+</body>
+</html>
